@@ -1,0 +1,11 @@
+.env
+__pycache__/
+*.pyc
+.venv/
+venv/
+.cache/
+code/.cache/
+code/traces/*
+!code/traces/examples/
+code.zip
+.pytest_cache/
