@@ -35,3 +35,11 @@ class UsageRecorder:
             t["input_tokens"] += r["input_tokens"]
             t["output_tokens"] += r["output_tokens"]
         return {model: dict(values) for model, values in totals.items()}
+
+    def projected_cost(self, prices: dict[str, tuple[float, float]]) -> float:
+        """USD at paid-tier prices ($ per 1M input / output tokens) for this run."""
+        total = 0.0
+        for model, t in self.totals().items():
+            price_in, price_out = prices.get(model, (0.0, 0.0))
+            total += t.get("input_tokens", 0) * price_in / 1e6 + t.get("output_tokens", 0) * price_out / 1e6
+        return total

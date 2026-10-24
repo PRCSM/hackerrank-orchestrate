@@ -1,0 +1,4 @@
+{"exported_at": "2026-05-10T12:00:00Z", "source": "records_assurance_service", "snapshots": [
+ {"captured_at": "2026-05-10T12:00:00Z", "data_store": "identity_service", "collection": "deleted_customer_references",
+  "records": [{"resource_id": "tombstone_106", "subject_reference": "user_906", "name": "Lena Vogt",
+               "email": "lena.vogt@example.com", "phone": null, "email_hash": null, "account_status": "DELETED"}]}]}

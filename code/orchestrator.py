@@ -24,7 +24,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from audit import Auditor, CaseResult
-from config import CACHE_DIR, FALLBACK_MODEL, INVESTIGATOR_MODEL, MAX_INVESTIGATIONS
+from config import CACHE_DIR, FALLBACK_MODEL, INVESTIGATOR_MODEL, MAX_INVESTIGATIONS, PRICE_PER_MTOK
 from ingest.requests import DeletionRequest, case_sort_key
 from storage.cache import ResultCache
 from storage.trace import case_trace, write_trace
@@ -59,7 +59,6 @@ class Orchestrator:
         self.usage = client.usage if client is not None else UsageRecorder(cache_dir / "usage.jsonl")
         self.stats: Counter = Counter()
         self.log: list[str] = []
-        self.routed: dict[str, list[str]] = {}
 
     # ------------------------------------------------------------------ intent
     def _intents(self, targets: list[DeletionRequest], all_requests: list[DeletionRequest]) -> dict[str, tuple[bool, str]]:
@@ -110,8 +109,6 @@ class Orchestrator:
         flagged = [r for r in results.values() if r.uncertainty and r.links is not None]
         flagged.sort(key=lambda r: (-flag_score(r.uncertainty), case_sort_key(r.request.case_id)))
         chosen = flagged[:MAX_INVESTIGATIONS]
-        for r in flagged:
-            self.routed[r.request.case_id] = r.uncertainty
         self.stats["routed_flagged"] = len(flagged)
         self.stats["routed_investigated" if self.client is not None else "routed_within_budget"] = len(chosen)
         return chosen
@@ -168,5 +165,6 @@ class Orchestrator:
         lines = ["run stats: " + ", ".join(f"{k}={v}" for k, v in sorted(self.stats.items()))]
         for model, totals in sorted(self.usage.totals().items()):
             lines.append(f"usage {model}: " + ", ".join(f"{k}={v}" for k, v in sorted(totals.items())))
+        lines.append(f"projected paid-tier cost: ${self.usage.projected_cost(PRICE_PER_MTOK):.4f} (actual on free tier: $0)")
         lines += self.log[:20]
         return "\n".join(lines)

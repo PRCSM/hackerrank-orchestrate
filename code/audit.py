@@ -11,7 +11,6 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from agent.intent_rules import classify
-from graph.evidence_graph import EvidenceGraph
 from graph.identity import IdentityResolver
 from graph.linkage import CaseLinks, Link, Linker
 from graph.state import ResourceState, resource_state_at

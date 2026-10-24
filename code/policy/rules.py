@@ -11,8 +11,6 @@ import csv
 from dataclasses import dataclass
 from pathlib import Path
 
-ACTIONS = ("DELETE", "REDACT", "ANONYMIZE", "RETAIN", "BLOCK", "DISABLE")
-
 
 @dataclass(frozen=True)
 class Rule:

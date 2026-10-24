@@ -37,11 +37,12 @@ def case_trace(result: CaseResult, extra: dict[str, Any] | None = None) -> dict[
              "reason": l.reason, "uncertain": l.uncertain}
             for l in sorted(result.links.links.values(), key=lambda l: l.resource_id)
         ]
+        trace["stale_links_dropped"] = result.links.stale
     states = {s.resource_id: s for s in result.states}
     trace["assessments"] = [
         {
             "resource_id": a.resource_id, "system_id": a.system_id, "category": a.category,
-            "requirement": a.requirement, "compliant": a.compliant, "note": a.note,
+            "requirement": a.requirement, "compliant": a.compliant, "note": a.note, "proof_evidence": a.proof_evidence,
             "presence": _fact(states[a.resource_id].presence),
             "identifiable": _fact(states[a.resource_id].identifiable),
             "attributable": _fact(states[a.resource_id].attributable),

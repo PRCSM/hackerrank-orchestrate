@@ -95,3 +95,24 @@ branch=claude/quirky-shannon-4nhscq
 repo_root=/home/user/hackerrank-orchestrate
 worktree=main
 parent_agent=none
+
+## [2026-10-24T19:15:48Z] Phase 5 done: evaluation + usage reports, 6 custom cases, scorer bug fixed
+
+User Prompt (verbatim, secrets redacted):
+(continuation of the single build request logged above; no new user message)
+
+Agent Response Summary:
+Built a separate hand-made mini dataset with the four custom cases the user required (lookalike decoy, evidence after audit_at, uppercase/hash-only match, non-English non-deletion) plus restore-risk/tombstone and Spanish opt-out. The first run exposed two real intent-gate failures (Japanese "do not delete" read as deletion; German "loeschen" unknown) and one of my own data mistakes (non-numeric user ids). Fixed with multilingual negations/verbs: custom 66.7% -> 100% status, F1 69.2% -> 100%. While writing the report I found a scorer bug (step tuples intersected across cases, so swapped accounts counted as hits) and fixed it; the true sample metrics are status 100%, step P/R/F1 97.3/93.3/95.2%, 20/32 exact (previously reported 96.3% F1 was ~1 pt optimistic). usage_report.md states the real run used 0 tokens (no key, Groq blocked) and gives a cited paid-tier projection (~/bin/bash.027 per full run).
+
+Actions:
+* Created code/evaluation/custom_cases/{dataset/*,expected_output.csv}; added --custom to code/evaluation/main.py; fixed score()
+* Edited code/agent/intent_rules.py; removed dead code (ACTIONS, Orchestrator.routed, unused import); pyflakes clean
+* Wrote code/evaluation/evaluation_report.md and code/evaluation/usage_report.md; pytest 23 passed; output md5 unchanged
+
+Context:
+tool=Claude Code
+model=claude-opus-5-5
+branch=claude/quirky-shannon-4nhscq
+repo_root=/home/user/hackerrank-orchestrate
+worktree=main
+parent_agent=none

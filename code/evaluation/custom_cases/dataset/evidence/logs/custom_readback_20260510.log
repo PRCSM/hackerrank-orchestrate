@@ -1,0 +1,15 @@
+2026-05-10T10:00:00Z level=DEBUG service=account_service trace_id=c-001 event=profile_lookup_started resource_id=account_101 lookup_key=maria.lopez@example.com
+2026-05-10T10:00:01Z level=INFO service=account_service trace_id=c-001 event=profile_lookup_completed resource_id=account_101 rows=0 http_status=404
+2026-05-10T10:01:00Z level=DEBUG service=search_service trace_id=c-002 event=index_query_started resource_id=search_101 lookup_key=maria.lopez.jr@example.com
+2026-05-10T10:01:01Z level=INFO service=search_service trace_id=c-002 event=index_query_completed resource_id=search_101 result=hit total_hits=1 email=maria.lopez.jr@example.com customer_reference=null
+2026-05-10T10:02:00Z level=DEBUG service=search_service trace_id=c-003 event=index_query_started resource_id=search_102 lookup_key=mlopez.old@example.com
+2026-05-10T10:02:01Z level=INFO service=search_service trace_id=c-003 event=index_query_completed resource_id=search_102 result=hit total_hits=1 email=mlopez.old@example.com customer_reference=null
+2026-05-10T10:03:00Z level=DEBUG service=account_service trace_id=c-004 event=profile_lookup_started resource_id=account_104 lookup_key=ANNA.BERG@EXAMPLE.COM
+2026-05-10T10:03:01Z level=INFO service=account_service trace_id=c-004 event=profile_lookup_completed resource_id=account_104 rows=0 http_status=404
+2026-05-10T10:04:00Z level=INFO service=analytics_platform trace_id=c-005 event=analytics_profile_read_completed resource_id=analytics_104 customer_reference=null email=null phone=null email_hash=21dbca49a5e22aea1c7aa41fa461c890ba15e8f895ea09c8a08a1962303e8df8 audience_cohort=general_shopper
+2026-05-10T10:05:00Z level=INFO service=security_service trace_id=c-006 event=audit_record_read_completed resource_id=audit_record_104 rows=1 subject_reference=user_904 event_code=ACCOUNT_DELETION_RECORDED retention_until=2031-12-31T23:59:59Z
+2026-05-10T10:06:00Z level=DEBUG service=account_service trace_id=c-007 event=profile_lookup_started resource_id=account_105 lookup_key=tom.reed@example.com
+2026-05-10T10:06:01Z level=INFO service=account_service trace_id=c-007 event=profile_lookup_completed resource_id=account_105 rows=0 http_status=404
+2026-05-10T10:07:00Z level=DEBUG service=account_service trace_id=c-008 event=profile_lookup_started resource_id=account_106 lookup_key=lena.vogt@example.com
+2026-05-10T10:07:01Z level=INFO service=account_service trace_id=c-008 event=profile_lookup_completed resource_id=account_106 rows=0 http_status=404
+2026-05-10T10:08:00Z level=INFO service=backup_service trace_id=c-009 event=restore_policy_read_completed resource_id=backup_106 archive_present=true restore_allowed=true archive_key=archive/customer-data/backup_106.tar.zst customer_email=null customer_reference=user_906

@@ -9,7 +9,9 @@ Metrics
   the same position has the same value;
 - exact sequence match: the whole steps array is identical.
 
-Usage: python3 code/evaluation/main.py --pred PRED.csv [--gold dataset/sample_output.csv] [--diff]
+Usage:
+  python3 code/evaluation/main.py --pred PRED.csv [--gold dataset/sample_output.csv] [--diff]
+  python3 code/evaluation/main.py --custom [--diff]   # run + score the hand-built cases
 """
 from __future__ import annotations
 
@@ -33,10 +35,9 @@ def _tuples(steps: list[dict], with_evidence: bool = True) -> Counter:
     return Counter(tuple(s.get(f) for f in fields) for s in steps)
 
 
-def _prf(pred: Counter, gold: Counter) -> tuple[float, float, float]:
-    hit = sum((pred & gold).values())
-    precision = hit / sum(pred.values()) if pred else (1.0 if not gold else 0.0)
-    recall = hit / sum(gold.values()) if gold else 1.0
+def _prf(hit: int, predicted: int, expected: int) -> tuple[float, float, float]:
+    precision = hit / predicted if predicted else (1.0 if not expected else 0.0)
+    recall = hit / expected if expected else 1.0
     f1 = 2 * precision * recall / (precision + recall) if precision + recall else 0.0
     return precision, recall, f1
 
@@ -44,7 +45,9 @@ def _prf(pred: Counter, gold: Counter) -> tuple[float, float, float]:
 def score(pred: dict[str, tuple[str, list[dict]]], gold: dict[str, tuple[str, list[dict]]]) -> dict:
     cases = sorted(gold, key=case_sort_key)
     confusion = Counter()
-    pred_all, gold_all, pred_noev, gold_noev = Counter(), Counter(), Counter(), Counter()
+    # Steps are matched within a case only: a resource listed under the wrong
+    # case is a miss there and an extra here, never a hit.
+    counts = Counter()
     field_hits = Counter()
     gold_steps = 0
     exact = 0
@@ -54,10 +57,11 @@ def score(pred: dict[str, tuple[str, list[dict]]], gold: dict[str, tuple[str, li
         p_status, p_steps = pred.get(case_id, ("MISSING", []))
         confusion[(g_status, p_status)] += 1
         pt, gt = _tuples(p_steps), _tuples(g_steps)
-        pred_all += pt
-        gold_all += gt
-        pred_noev += _tuples(p_steps, False)
-        gold_noev += _tuples(g_steps, False)
+        pn, gn = _tuples(p_steps, False), _tuples(g_steps, False)
+        counts["hit"] += sum((pt & gt).values())
+        counts["hit_noev"] += sum((pn & gn).values())
+        counts["pred"] += len(p_steps)
+        counts["gold"] += len(g_steps)
         for index, g_step in enumerate(g_steps):
             gold_steps += 1
             p_step = p_steps[index] if index < len(p_steps) else {}
@@ -71,8 +75,8 @@ def score(pred: dict[str, tuple[str, list[dict]]], gold: dict[str, tuple[str, li
                 "case_id": case_id, "gold_status": g_status, "pred_status": p_status,
                 "missing": sorted((gt - pt).elements()), "extra": sorted((pt - gt).elements()),
             })
-    p, r, f = _prf(pred_all, gold_all)
-    p2, r2, f2 = _prf(pred_noev, gold_noev)
+    p, r, f = _prf(counts["hit"], counts["pred"], counts["gold"])
+    p2, r2, f2 = _prf(counts["hit_noev"], counts["pred"], counts["gold"])
     return {
         "cases": len(cases),
         "status_accuracy": sum(v for (g, q), v in confusion.items() if g == q) / len(cases),
@@ -108,12 +112,38 @@ def format_report(metrics: dict, title: str, diff: bool = False) -> str:
     return "\n".join(lines)
 
 
+CUSTOM_DIR = Path(__file__).resolve().parent / "custom_cases"
+
+
+def run_custom(diff: bool) -> str:
+    """Run the deterministic pipeline on the hand-built dataset and score it."""
+    import tempfile
+
+    from audit import Auditor
+    from ingest.requests import load_requests
+    from orchestrator import Orchestrator
+
+    dataset = CUSTOM_DIR / "dataset"
+    requests = load_requests(dataset / "deletion_requests.csv")
+    with tempfile.TemporaryDirectory() as scratch:
+        orchestrator = Orchestrator(Auditor(dataset), client=None, resume=False, trace_dir=Path(scratch), cache_dir=Path(scratch))
+        results = orchestrator.run(requests, all_requests=requests)
+    pred = {r.request.case_id: (r.plan.status, r.plan.numbered()) for r in results}
+    return format_report(score(pred, read_output(CUSTOM_DIR / "expected_output.csv")), "custom cases", diff=diff)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--pred", type=Path, required=True)
+    parser.add_argument("--pred", type=Path)
     parser.add_argument("--gold", type=Path, default=DATASET_DIR / "sample_output.csv")
+    parser.add_argument("--custom", action="store_true", help="run and score the custom cases")
     parser.add_argument("--diff", action="store_true", help="print per-case differences")
     args = parser.parse_args()
+    if args.custom:
+        print(run_custom(args.diff))
+        return
+    if args.pred is None:
+        parser.error("--pred is required unless --custom is given")
     gold = read_output(args.gold)
     pred = {k: v for k, v in read_output(args.pred).items() if k in gold}
     print(format_report(score(pred, gold), f"{args.pred.name} vs {args.gold.name}", diff=args.diff))

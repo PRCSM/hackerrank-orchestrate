@@ -1,0 +1,4 @@
+file_id,file_path,origin,captured_at
+evidence_c1,evidence/logs/custom_readback_20260510.log,service_readback_logs,2026-05-10T11:00:00Z
+evidence_c2,evidence/records/custom_snapshot_bundle_20260520.json,records_assurance_snapshot_bundle,2026-05-20T12:00:00Z
+evidence_c3,evidence/records/custom_identity_export_20260510.json,records_assurance_snapshot_bundle,2026-05-10T12:00:00Z

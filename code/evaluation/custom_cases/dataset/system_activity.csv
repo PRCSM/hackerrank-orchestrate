@@ -1,0 +1,2 @@
+activity_id,event_time,event_type,source_system,target_system,resource_id,reported_result,details
+activity_c1,2026-05-09T11:00:00Z,DELETE_RECORD,deletion_worker,search_service,search_102,SUCCESS,Deletion worker reported the requested operation as completed. Target resource: search_102.

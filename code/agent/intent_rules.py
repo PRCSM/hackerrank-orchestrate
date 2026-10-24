@@ -1,7 +1,8 @@
 """Deterministic multilingual intent gate (fallback for the LLM classifier).
 
 A request authorizes deletion only when it asks for the account / personal
-data to be deleted, erased, removed or closed. Requests that ask only for
+data to be deleted, erased, removed or closed (EN, ES, PT, FR, JA, KO, plus
+DE / IT / NL verbs). Requests that ask only for
 access, export, a copy, a correction, an email/phone change, login help,
 invoices, or a marketing opt-out are non-deletion — even if they contain the
 word "remove" ("remove me from marketing lists only") or explicitly say not
@@ -17,6 +18,7 @@ DELETION_PATTERNS = (
     r"\bcannot identify me\b",
     r"eliminaci[oó]n", r"eliminar", r"exclus[aã]o", r"excluir", r"suppression", r"supprimer",
     r"削除", r"삭제", r"탈퇴",
+    r"l[öo]sch", r"cancellare", r"eliminare", r"verwijder",
 )
 NON_DELETION_PATTERNS = (
     r"\b(don'?t|do not|never) (delete|remove|erase|close)", r"\bcontinue using\b", r"\bstill use it\b",
@@ -24,6 +26,10 @@ NON_DELETION_PATTERNS = (
     r"\b(send|give|need|want) (me )?a copy\b", r"\bportable format\b", r"\bdownload my\b", r"\bwhat personal information\b",
     r"\binvoice", r"\bmisspelled\b", r"\bout of date\b", r"\bchange the email\b", r"\breset(ting)? the login\b",
     r"\bcan'?t access my profile\b",
+    # the same refusals in the other supported languages
+    r"削除(は|を)?しないで", r"삭제하지\s*(마|말)", r"\bno (borren|eliminen|borre|elimine)\b",
+    r"\bn[ãa]o (excluam|exclua|apaguem|apague)\b", r"\bne (supprimez|pas supprimer)\b", r"\bnicht l[öo]schen\b",
+    r"\bdarme de baja de los correos\b", r"\bsigo usando\b", r"\bcontinuo usando\b", r"引き続き使う",
 )
 NO_MATCH = "no deletion instruction found"
 
