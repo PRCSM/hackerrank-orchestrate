@@ -1,5 +1,7 @@
 """JSON evidence: snapshot bundles, service exports, ledgers and collections.
 
+Store snapshots (`data_store` + `records`) also enumerate their store.
+
 The JSON files share no single schema, so the parser walks the document and
 treats every object that carries a `resource_id` as one record. The nearest
 enclosing timestamp (observed_at / recorded_at / captured_at / exported_at)
@@ -44,6 +46,11 @@ def _walk(node: Any, context: dict[str, Any], evidence: EvidenceFile, parsed: Pa
     for key in CONTEXT_KEYS:
         if isinstance(node.get(key), str):
             local["collection"] = node[key]
+    if isinstance(node.get("data_store"), str) and isinstance(node.get("records"), list):
+        # A store snapshot lists that store's records of interest; a known
+        # resource of the store missing from it is absent at snapshot time.
+        parsed.enumerated_systems[node["data_store"]] = max(
+            local["time"], parsed.enumerated_systems.get(node["data_store"], ""))
     for key, child in node.items():
         if isinstance(child, (dict, list)):
             # Service exports nest collections under their names.

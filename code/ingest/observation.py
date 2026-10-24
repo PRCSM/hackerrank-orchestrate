@@ -86,13 +86,21 @@ class Observation(BaseModel):
     identifiable: bool | None = None
     flow_active: bool | None = None
     restore_allowed: bool | None = None
+    references_user: bool | None = None
     exposed_fields: tuple[str, ...] = ()
     implicit: bool = False
     raw_ref: str = ""
     summary: str = ""
 
-    def has_state(self) -> bool:
-        return any(v is not None for v in (self.presence, self.identifiable, self.flow_active, self.restore_allowed))
+    @property
+    def attributable(self) -> bool | None:
+        """Can the record still be tied to a person (direct identifier OR a
+        stable user reference)? Anonymisation must remove both."""
+        if self.identifiable or self.references_user:
+            return True
+        if self.identifiable is False or self.references_user is False:
+            return False
+        return None
 
 
 # ---------------------------------------------------------------- normalising
@@ -236,6 +244,13 @@ def _restore_allowed(fields: dict[str, Any]) -> bool | None:
     return None
 
 
+def _references_user(fields: dict[str, Any]) -> bool | None:
+    named = [name for name in STABLE_REFERENCE_FIELDS if name in fields]
+    if not named:
+        return None
+    return any(not _is_null(fields[name]) and not _is_redacted(fields[name]) for name in named)
+
+
 def category_hint(fields: dict[str, Any]) -> str | None:
     explicit = fields.get("record_type")
     if explicit:
@@ -274,6 +289,10 @@ def observation_from_fields(
             continue
         keys |= candidate_keys(value)
     identifiable, exposed = _identifiable(fields)
+    references_user = _references_user(fields)
+    presence = _presence(fields)
+    if presence is None and (identifiable is not None or references_user is not None):
+        presence = True  # stored fields were read back, so the record exists
     summary = ", ".join(
         f"{k}={v}" for k, v in sorted(fields.items()) if not k.startswith("__") and not isinstance(v, (dict, list))
     )
@@ -286,10 +305,11 @@ def observation_from_fields(
         resource_id=resource_id,
         category=category_hint(fields),
         keys=frozenset(keys),
-        presence=_presence(fields),
+        presence=presence,
         identifiable=identifiable,
         flow_active=_flow_active(fields),
         restore_allowed=_restore_allowed(fields),
+        references_user=references_user,
         exposed_fields=exposed,
         raw_ref=raw_ref,
         summary=summary[:400],

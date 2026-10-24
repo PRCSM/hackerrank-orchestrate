@@ -31,3 +31,24 @@ branch=claude/quirky-shannon-4nhscq
 repo_root=/home/user/hackerrank-orchestrate
 worktree=main
 parent_agent=none
+
+## [2026-10-24T19:01:01Z] Phase 2 done: deterministic core, samples F1 96.3%, 100% status
+
+User Prompt (verbatim, secrets redacted):
+(continuation of the single build request logged above; no new user message)
+
+Agent Response Summary:
+Implemented state reconstruction, policy rules, the planner, the validator, writer, trace, the orchestrator and the scorer, then iterated only with general rules as the user required. Failures found and fixed: SQL-omission absences overriding field readbacks (F1 88.1->94.0%), contact lookups mis-categorised (T10 resolved as SECONDARY_IDENTIFIER/MARKETING -> DELETE), stale earlier-episode links and batch attribution ignoring whether a request was clean (->96.3%, 20/32 exact). A closest-to-reported_at tie-break was tested, measured worse (94.7%) and reverted. The validator then caught case_532 (COMPLETE with an unproven account); fixed by giving clean cases first pick of observed records and dropping unprovable COMPLETE checks. Full 518-row run is valid and byte-identical across reruns.
+
+Actions:
+* Created code/graph/state.py, code/policy/{rules,planner}.py, code/validate/validator.py, code/storage/{writer,trace}.py, code/audit.py, code/orchestrator.py, code/main.py, code/agent/intent_rules.py, code/evaluation/main.py, tests
+* Ran python3 code/main.py --no-llm --sample and code/evaluation/main.py --diff after each rule change; pytest (15 passed); md5 check of two full runs
+* Wrote code/docs/handoff_phase2.md
+
+Context:
+tool=Claude Code
+model=claude-opus-5-5
+branch=claude/quirky-shannon-4nhscq
+repo_root=/home/user/hackerrank-orchestrate
+worktree=main
+parent_agent=none

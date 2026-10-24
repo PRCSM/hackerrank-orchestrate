@@ -100,7 +100,10 @@ def parse_logs(evidence: EvidenceFile) -> ParsedFile:
         resource = fields.get("resource_id")
         if resource and resource != "null":
             merged = trace.resources.setdefault(resource, {})
+            events = " ".join(filter(None, (merged.get("event"), fields.get("event"))))
             merged.update(fields)
+            if events:
+                merged["event"] = events  # keep every step of the trace (e.g. contact_query + marker check)
             trace.times[resource] = timestamp
             trace.lines.setdefault(resource, number)
         else:

@@ -22,6 +22,7 @@ from __future__ import annotations
 from collections import defaultdict
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
+from typing import Callable
 
 from graph.evidence_graph import EvidenceGraph
 from graph.identity import Identity, IdentityResolver
@@ -52,6 +53,7 @@ class CaseLinks:
     case_id: str
     identities: list[Identity]
     links: dict[str, Link] = field(default_factory=dict)
+    stale: list[str] = field(default_factory=list)
 
     def add(self, link: Link) -> None:
         self.links.setdefault(link.resource_id, link)
@@ -85,6 +87,10 @@ class Linker:
         result = CaseLinks(case_id=request.case_id, identities=identities)
         keys = frozenset().union(*(i.keys for i in identities)) if identities else frozenset()
         for obs in sorted(self.graph.observations_for_keys(keys, request.audit_at), key=lambda o: o.resource_id):
+            if self._stale(obs.resource_id, request):
+                if obs.resource_id not in result.stale:
+                    result.stale.append(obs.resource_id)
+                continue
             matched = sorted(obs.keys & keys)
             result.add(Link(obs.resource_id, obs.system_id, "key", f"{obs.evidence_id} carries {matched[0]}"))
         for resource_id in sorted(list(result.links)):
@@ -92,10 +98,22 @@ class Linker:
                 result.add(Link(source, system_for_resource(source), "recreation", f"{source} repopulated {resource_id}"))
         return result
 
+    def _stale(self, resource_id: str, request: DeletionRequest) -> bool:
+        """Nothing about the resource was observed since the request was made:
+        it belongs to an earlier episode (an earlier deletion of the same
+        person) and says nothing about the copies this request is about."""
+        times = [o.observed_at for o in self.graph.resource_observations(resource_id, request.audit_at)]
+        return bool(times) and max(times) < request.requested_at
+
     # ------------------------------------------------------------ batch inference
-    def link_all(self, requests: list[DeletionRequest]) -> dict[str, CaseLinks]:
-        """Direct links for every request, then batch attribution across them."""
+    def link_all(self, requests: list[DeletionRequest], violates: Callable[[DeletionRequest, CaseLinks], bool]) -> dict[str, CaseLinks]:
+        """Direct links for every request, then batch attribution across them.
+
+        `violates(request, links)` tells whether the request's directly linked
+        records already show a policy violation; completed policy actions are
+        attributed to requests without one first (their batch succeeded)."""
         links = {r.case_id: self.direct_links(r) for r in requests}
+        self._violating = {r.case_id: violates(r, links[r.case_id]) for r in requests}
         by_case = {r.case_id: r for r in requests}
         worker = [a for a in self.graph.activities if a.source_system == WORKER and RESOURCE_ID_PATTERN.match(a.resource_id)]
         claims: dict[str, list[tuple[str, Activity]]] = defaultdict(list)
@@ -140,10 +158,12 @@ class Linker:
     def _assign(self, claims, links, by_case) -> None:
         """Per resource type, match claimed resources to claiming cases.
 
-        Level 0 edges: the case's own evidence files also observe the
-        resource. Level 1 edges: the resource is in the case's batch but in
-        none of its files; used for accounts (every case has one) and for any
-        resource no other request claims. Within a
+        Edge cost is (file, violation). file=0: the case's own evidence files
+        also observe the resource; file=1: only the batch connects them, used
+        for accounts (every case has one) and for resources no other request
+        claims. violation=1: the case already shows a policy violation, so its
+        batch did not complete cleanly; a clean case gets first pick of the
+        records its own evidence observes (it needs them as proof). Within a
         level, cases in case order each take the earliest-processed remaining
         resource they claim. A case takes one inferred resource per type and
         a resource goes to one case; a choice with an equally good rival is
@@ -156,18 +176,19 @@ class Linker:
             resources = sorted(by_type[rtype], key=lambda r: (min(a.event_time for _, a in claims[r]), r))
             files = {c: self._evidence_files(links[c], by_case[c].audit_at) for c in cases}
 
-            def cost(case_id: str, resource_id: str) -> int:
+            def cost(case_id: str, resource_id: str) -> tuple[int, int]:
                 seen = {o.evidence_id for o in self.graph.resource_observations(resource_id, by_case[case_id].audit_at)}
-                return 0 if seen & files[case_id] else 1
+                file_cost = 0 if seen & files[case_id] else 1
+                return file_cost, int(self._violating[case_id]) if file_cost == 0 else 0
 
             used: set[str] = set()
-            for level in (0, 1):
+            for level in ((0, 0), (0, 1), (1, 0), (1, 1)):
                 for case_id in cases:
                     if any(resource_type(r) == rtype for r in links[case_id].links):
                         continue
                     options = [r for r in resources if r not in used and case_id in {c for c, _ in claims[r]}
                                and cost(case_id, r) == level
-                               and (level == 0 or rtype == "account" or len(claims[r]) == 1)]
+                               and (level[0] == 0 or rtype == "account" or len(claims[r]) == 1)]
                     if not options:
                         continue
                     resource_id = options[0]
@@ -180,3 +201,4 @@ class Linker:
                         uncertain=bool(rivals) or len(options) > 1,
                     ))
                     used.add(resource_id)
+
