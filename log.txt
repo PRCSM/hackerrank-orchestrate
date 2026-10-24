@@ -74,3 +74,24 @@ branch=claude/quirky-shannon-4nhscq
 repo_root=/home/user/hackerrank-orchestrate
 worktree=main
 parent_agent=none
+
+## [2026-10-24T19:09:15Z] Phase 4 done: full 518-row run validated, 15 spot-checks
+
+User Prompt (verbatim, secrets redacted):
+(continuation of the single build request logged above; no new user message)
+
+Agent Response Summary:
+Ran all 518 cases (deterministic, since no Groq key is available); validate_output reports 0 problems and two runs are byte-identical. Spot-checked 15 traces against raw evidence as the user specified (7 hand-crafted case_33..50 range, 4 multilingual PT/FR, 4 grid), confirmed decoy exclusion, OCR resource-id repair and replica-only rows as remaining copies. Systemic issue found: account submissions can land up to +48 min after reported_at (case_242); widened the window to +1h with no sample regression. Saved six example traces under code/traces/examples.
+
+Actions:
+* python3 code/main.py; validate_output; md5sum x2
+* Read traces case_33/34/35/39/45/46/50/210/522/123/249/84/97/480/334 and the raw SQL/log lines behind them
+* Edited code/graph/linkage.py (PROFILE_WINDOW); wrote code/docs/handoff_phase4.md
+
+Context:
+tool=Claude Code
+model=claude-opus-5-5
+branch=claude/quirky-shannon-4nhscq
+repo_root=/home/user/hackerrank-orchestrate
+worktree=main
+parent_agent=none

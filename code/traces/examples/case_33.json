@@ -1,0 +1,92 @@
+{
+  "assessments": [
+    {
+      "attributable": {
+        "evidence_id": "evidence_18",
+        "implicit": false,
+        "observed_at": "2026-07-18T11:00:00Z",
+        "source": "account_history_report_20260718.pdf:ocr",
+        "value": true
+      },
+      "category": "USER_EXPORT",
+      "compliant": false,
+      "flow_active": null,
+      "identifiable": {
+        "evidence_id": "evidence_18",
+        "implicit": false,
+        "observed_at": "2026-07-18T11:00:00Z",
+        "source": "account_history_report_20260718.pdf:ocr",
+        "value": true
+      },
+      "note": "",
+      "presence": {
+        "evidence_id": "evidence_18",
+        "implicit": false,
+        "observed_at": "2026-07-18T11:00:00Z",
+        "source": "account_history_report_20260718.pdf:ocr",
+        "value": true
+      },
+      "requirement": "DELETE",
+      "resource_id": "export_1842",
+      "restore_allowed": null,
+      "system_id": "export_service"
+    }
+  ],
+  "audit_at": "2026-07-19T13:00:00Z",
+  "case_id": "case_33",
+  "identities": [
+    {
+      "audit_ids": [],
+      "emails": [
+        "ingrid.dahl@outlook.com"
+      ],
+      "hash_count": 1,
+      "user_id": "user_18"
+    }
+  ],
+  "intent": "deletion requested (matched '\\\\bdelet')",
+  "links": [
+    {
+      "channel": "key",
+      "reason": "evidence_18 carries ingrid.dahl@outlook.com",
+      "resource_id": "export_1842",
+      "system_id": "export_service",
+      "uncertain": false
+    }
+  ],
+  "mode": "deterministic",
+  "reported_status": "COMPLETE",
+  "status": "INCOMPLETE",
+  "steps": [
+    {
+      "evidence_id": "evidence_18",
+      "operation": "REPORT_REMAINING_RECORD",
+      "phase": "FINDING",
+      "resource_id": "export_1842",
+      "state": "PRESENT",
+      "step_no": 1,
+      "system_id": "export_service"
+    },
+    {
+      "evidence_id": "",
+      "operation": "DELETE_RECORD",
+      "phase": "REMEDIATION",
+      "resource_id": "export_1842",
+      "state": "ABSENT",
+      "step_no": 2,
+      "system_id": "export_service"
+    },
+    {
+      "evidence_id": "",
+      "operation": "VERIFY_RECORD_ABSENT",
+      "phase": "VERIFICATION",
+      "resource_id": "export_1842",
+      "state": "ABSENT",
+      "step_no": 3,
+      "system_id": "export_service"
+    }
+  ],
+  "uncertainty": [
+    "no account resource found"
+  ]
+}

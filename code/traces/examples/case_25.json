@@ -1,0 +1,152 @@
+{
+  "assessments": [
+    {
+      "attributable": null,
+      "category": "USER_PROFILE",
+      "compliant": true,
+      "flow_active": null,
+      "identifiable": null,
+      "note": "",
+      "presence": {
+        "evidence_id": "evidence_92",
+        "implicit": false,
+        "observed_at": "2026-09-15T09:31:40Z",
+        "source": "service_resource_export_20260915_114455.json:account_3136",
+        "value": false
+      },
+      "requirement": "DELETE",
+      "resource_id": "account_3136",
+      "restore_allowed": null,
+      "system_id": "account_service"
+    },
+    {
+      "attributable": {
+        "evidence_id": "evidence_92",
+        "implicit": false,
+        "observed_at": "2026-09-15T09:58:44Z",
+        "source": "service_resource_export_20260915_114455.json:analytics_1895",
+        "value": false
+      },
+      "category": "ANALYTICS_PROFILE",
+      "compliant": true,
+      "flow_active": null,
+      "identifiable": {
+        "evidence_id": "evidence_92",
+        "implicit": false,
+        "observed_at": "2026-09-15T09:58:44Z",
+        "source": "service_resource_export_20260915_114455.json:analytics_1895",
+        "value": false
+      },
+      "note": "",
+      "presence": {
+        "evidence_id": "evidence_92",
+        "implicit": false,
+        "observed_at": "2026-09-15T09:58:44Z",
+        "source": "service_resource_export_20260915_114455.json:analytics_1895",
+        "value": true
+      },
+      "requirement": "ANONYMIZE",
+      "resource_id": "analytics_1895",
+      "restore_allowed": null,
+      "system_id": "analytics_platform"
+    },
+    {
+      "attributable": {
+        "evidence_id": "evidence_92",
+        "implicit": false,
+        "observed_at": "2026-09-15T10:07:33Z",
+        "source": "service_resource_export_20260915_114455.json:audit_record_451",
+        "value": true
+      },
+      "category": "SECURITY_AUDIT_LOG",
+      "compliant": true,
+      "flow_active": null,
+      "identifiable": null,
+      "note": "",
+      "presence": {
+        "evidence_id": "evidence_92",
+        "implicit": false,
+        "observed_at": "2026-09-15T10:07:33Z",
+        "source": "service_resource_export_20260915_114455.json:audit_record_451",
+        "value": true
+      },
+      "requirement": "RETAIN",
+      "resource_id": "audit_record_451",
+      "restore_allowed": null,
+      "system_id": "security_service"
+    }
+  ],
+  "audit_at": "2026-09-15T12:00:00Z",
+  "case_id": "case_25",
+  "identities": [
+    {
+      "audit_ids": [
+        "audit_220"
+      ],
+      "emails": [
+        "s.yoon04@gmail.com"
+      ],
+      "hash_count": 1,
+      "user_id": "user_25"
+    }
+  ],
+  "intent": "deletion requested (matched '\\\\bbeen (removed|deleted)\\\\b')",
+  "links": [
+    {
+      "channel": "batch",
+      "reason": "activity_3597 handled account_3136 in the deletion batch before reported_at",
+      "resource_id": "account_3136",
+      "system_id": "account_service",
+      "uncertain": true
+    },
+    {
+      "channel": "batch",
+      "reason": "activity_3602 handled analytics_1895 in the deletion batch before reported_at",
+      "resource_id": "analytics_1895",
+      "system_id": "analytics_platform",
+      "uncertain": true
+    },
+    {
+      "channel": "key",
+      "reason": "evidence_92 carries user_25",
+      "resource_id": "audit_record_451",
+      "system_id": "security_service",
+      "uncertain": false
+    }
+  ],
+  "mode": "deterministic",
+  "reported_status": "NOT_STARTED",
+  "status": "COMPLETE",
+  "steps": [
+    {
+      "evidence_id": "evidence_92",
+      "operation": "VERIFY_RECORD_ABSENT",
+      "phase": "VERIFICATION",
+      "resource_id": "account_3136",
+      "state": "ABSENT",
+      "step_no": 1,
+      "system_id": "account_service"
+    },
+    {
+      "evidence_id": "evidence_92",
+      "operation": "VERIFY_RECORD_PRESENT",
+      "phase": "VERIFICATION",
+      "resource_id": "audit_record_451",
+      "state": "PRESENT",
+      "step_no": 2,
+      "system_id": "security_service"
+    },
+    {
+      "evidence_id": "evidence_92",
+      "operation": "VERIFY_RECORD_ANONYMIZED",
+      "phase": "VERIFICATION",
+      "resource_id": "analytics_1895",
+      "state": "ANONYMIZED",
+      "step_no": 3,
+      "system_id": "analytics_platform"
+    }
+  ],
+  "uncertainty": [
+    "batch-inferred resource with an equally plausible rival request"
+  ]
+}

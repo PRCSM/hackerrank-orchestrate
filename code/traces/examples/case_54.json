@@ -1,0 +1,357 @@
+{
+  "assessments": [
+    {
+      "attributable": null,
+      "category": "USER_PROFILE",
+      "compliant": true,
+      "flow_active": null,
+      "identifiable": null,
+      "note": "",
+      "presence": {
+        "evidence_id": "evidence_05",
+        "implicit": true,
+        "observed_at": "2026-09-21T10:00:00Z",
+        "source": "evidence_05:not-enumerated",
+        "value": false
+      },
+      "requirement": "DELETE",
+      "resource_id": "account_4990",
+      "restore_allowed": null,
+      "system_id": "account_service"
+    },
+    {
+      "attributable": {
+        "evidence_id": "evidence_05",
+        "implicit": false,
+        "observed_at": "2026-09-21T10:00:00Z",
+        "source": "customer_data_read_replica_20260921.sql:customer_data_primary:analytics_1738",
+        "value": true
+      },
+      "category": "ANALYTICS_PROFILE",
+      "compliant": false,
+      "flow_active": null,
+      "identifiable": {
+        "evidence_id": "evidence_05",
+        "implicit": false,
+        "observed_at": "2026-09-21T10:00:00Z",
+        "source": "customer_data_read_replica_20260921.sql:customer_data_primary:analytics_1738",
+        "value": true
+      },
+      "note": "",
+      "presence": {
+        "evidence_id": "evidence_05",
+        "implicit": false,
+        "observed_at": "2026-09-21T10:00:00Z",
+        "source": "customer_data_read_replica_20260921.sql:customer_data_primary:analytics_1738",
+        "value": true
+      },
+      "requirement": "ANONYMIZE",
+      "resource_id": "analytics_1738",
+      "restore_allowed": null,
+      "system_id": "analytics_platform"
+    },
+    {
+      "attributable": {
+        "evidence_id": "evidence_05",
+        "implicit": false,
+        "observed_at": "2026-09-21T10:00:00Z",
+        "source": "customer_data_read_replica_20260921.sql:customer_data_primary:audit_record_6325",
+        "value": true
+      },
+      "category": "SECURITY_AUDIT_LOG",
+      "compliant": true,
+      "flow_active": null,
+      "identifiable": null,
+      "note": "",
+      "presence": {
+        "evidence_id": "evidence_05",
+        "implicit": false,
+        "observed_at": "2026-09-21T10:00:00Z",
+        "source": "customer_data_read_replica_20260921.sql:customer_data_primary:audit_record_6325",
+        "value": true
+      },
+      "requirement": "RETAIN",
+      "resource_id": "audit_record_6325",
+      "restore_allowed": null,
+      "system_id": "security_service"
+    },
+    {
+      "attributable": null,
+      "category": "DATA_FLOW",
+      "compliant": false,
+      "flow_active": {
+        "evidence_id": "evidence_05",
+        "implicit": false,
+        "observed_at": "2026-09-21T10:00:00Z",
+        "source": "customer_data_read_replica_20260921.sql:customer_data_primary:data_flow_5080",
+        "value": true
+      },
+      "identifiable": null,
+      "note": "",
+      "presence": {
+        "evidence_id": "evidence_05",
+        "implicit": false,
+        "observed_at": "2026-09-21T10:00:00Z",
+        "source": "customer_data_read_replica_20260921.sql:customer_data_primary:data_flow_5080",
+        "value": true
+      },
+      "requirement": "DISABLE",
+      "resource_id": "data_flow_5080",
+      "restore_allowed": null,
+      "system_id": "integration_service"
+    },
+    {
+      "attributable": {
+        "evidence_id": "evidence_05",
+        "implicit": false,
+        "observed_at": "2026-09-21T10:00:00Z",
+        "source": "customer_data_read_replica_20260921.sql:customer_data_primary:search_3995",
+        "value": true
+      },
+      "category": "SEARCH_INDEX_ENTRY",
+      "compliant": false,
+      "flow_active": null,
+      "identifiable": {
+        "evidence_id": "evidence_05",
+        "implicit": false,
+        "observed_at": "2026-09-21T10:00:00Z",
+        "source": "customer_data_read_replica_20260921.sql:customer_data_primary:search_3995",
+        "value": true
+      },
+      "note": "",
+      "presence": {
+        "evidence_id": "evidence_05",
+        "implicit": false,
+        "observed_at": "2026-09-21T10:00:00Z",
+        "source": "customer_data_read_replica_20260921.sql:customer_data_primary:search_3995",
+        "value": true
+      },
+      "requirement": "DELETE",
+      "resource_id": "search_3995",
+      "restore_allowed": null,
+      "system_id": "search_service"
+    },
+    {
+      "attributable": {
+        "evidence_id": "evidence_05",
+        "implicit": false,
+        "observed_at": "2026-09-21T10:00:00Z",
+        "source": "customer_data_read_replica_20260921.sql:customer_data_primary:support_835",
+        "value": true
+      },
+      "category": "SUPPORT_MESSAGE",
+      "compliant": false,
+      "flow_active": null,
+      "identifiable": {
+        "evidence_id": "evidence_05",
+        "implicit": false,
+        "observed_at": "2026-09-21T10:00:00Z",
+        "source": "customer_data_read_replica_20260921.sql:customer_data_primary:support_835",
+        "value": true
+      },
+      "note": "",
+      "presence": {
+        "evidence_id": "evidence_05",
+        "implicit": false,
+        "observed_at": "2026-09-21T10:00:00Z",
+        "source": "customer_data_read_replica_20260921.sql:customer_data_primary:support_835",
+        "value": true
+      },
+      "requirement": "REDACT",
+      "resource_id": "support_835",
+      "restore_allowed": null,
+      "system_id": "support_platform"
+    }
+  ],
+  "audit_at": "2026-09-21T10:00:00Z",
+  "case_id": "case_54",
+  "identities": [
+    {
+      "audit_ids": [],
+      "emails": [
+        "bcarvalho6517@gmail.com"
+      ],
+      "hash_count": 1,
+      "user_id": "user_52"
+    }
+  ],
+  "intent": "deletion requested (matched 'exclus[a\u00e3]o')",
+  "links": [
+    {
+      "channel": "batch",
+      "reason": "activity_3573 handled account_4990 in the deletion batch before reported_at",
+      "resource_id": "account_4990",
+      "system_id": "account_service",
+      "uncertain": true
+    },
+    {
+      "channel": "key",
+      "reason": "evidence_05 carries bcarvalho6517@gmail.com",
+      "resource_id": "analytics_1738",
+      "system_id": "analytics_platform",
+      "uncertain": false
+    },
+    {
+      "channel": "key",
+      "reason": "evidence_05 carries user_52",
+      "resource_id": "audit_record_6325",
+      "system_id": "security_service",
+      "uncertain": false
+    },
+    {
+      "channel": "key",
+      "reason": "evidence_05 carries bcarvalho6517@gmail.com",
+      "resource_id": "data_flow_5080",
+      "system_id": "integration_service",
+      "uncertain": false
+    },
+    {
+      "channel": "key",
+      "reason": "evidence_05 carries bcarvalho6517@gmail.com",
+      "resource_id": "search_3995",
+      "system_id": "search_service",
+      "uncertain": false
+    },
+    {
+      "channel": "key",
+      "reason": "evidence_05 carries bcarvalho6517@gmail.com",
+      "resource_id": "support_835",
+      "system_id": "support_platform",
+      "uncertain": false
+    }
+  ],
+  "mode": "deterministic",
+  "reported_status": "PARTIALLY_COMPLETE",
+  "status": "INCOMPLETE",
+  "steps": [
+    {
+      "evidence_id": "evidence_05",
+      "operation": "REPORT_REMAINING_RECORD",
+      "phase": "FINDING",
+      "resource_id": "search_3995",
+      "state": "PRESENT",
+      "step_no": 1,
+      "system_id": "search_service"
+    },
+    {
+      "evidence_id": "evidence_05",
+      "operation": "REPORT_EXPOSED_PII",
+      "phase": "FINDING",
+      "resource_id": "analytics_1738",
+      "state": "PRESENT",
+      "step_no": 2,
+      "system_id": "analytics_platform"
+    },
+    {
+      "evidence_id": "evidence_05",
+      "operation": "REPORT_EXPOSED_PII",
+      "phase": "FINDING",
+      "resource_id": "support_835",
+      "state": "PRESENT",
+      "step_no": 3,
+      "system_id": "support_platform"
+    },
+    {
+      "evidence_id": "evidence_05",
+      "operation": "REPORT_ACTIVE_DATA_FLOW",
+      "phase": "FINDING",
+      "resource_id": "data_flow_5080",
+      "state": "ACTIVE",
+      "step_no": 4,
+      "system_id": "integration_service"
+    },
+    {
+      "evidence_id": "",
+      "operation": "DISABLE_DATA_FLOW",
+      "phase": "REMEDIATION",
+      "resource_id": "data_flow_5080",
+      "state": "DISABLED",
+      "step_no": 5,
+      "system_id": "integration_service"
+    },
+    {
+      "evidence_id": "",
+      "operation": "DELETE_RECORD",
+      "phase": "REMEDIATION",
+      "resource_id": "search_3995",
+      "state": "ABSENT",
+      "step_no": 6,
+      "system_id": "search_service"
+    },
+    {
+      "evidence_id": "",
+      "operation": "REDACT_RECORD",
+      "phase": "REMEDIATION",
+      "resource_id": "support_835",
+      "state": "REDACTED",
+      "step_no": 7,
+      "system_id": "support_platform"
+    },
+    {
+      "evidence_id": "",
+      "operation": "ANONYMIZE_RECORD",
+      "phase": "REMEDIATION",
+      "resource_id": "analytics_1738",
+      "state": "ANONYMIZED",
+      "step_no": 8,
+      "system_id": "analytics_platform"
+    },
+    {
+      "evidence_id": "",
+      "operation": "VERIFY_RECORD_ABSENT",
+      "phase": "VERIFICATION",
+      "resource_id": "account_4990",
+      "state": "ABSENT",
+      "step_no": 9,
+      "system_id": "account_service"
+    },
+    {
+      "evidence_id": "",
+      "operation": "VERIFY_RECORD_ABSENT",
+      "phase": "VERIFICATION",
+      "resource_id": "search_3995",
+      "state": "ABSENT",
+      "step_no": 10,
+      "system_id": "search_service"
+    },
+    {
+      "evidence_id": "",
+      "operation": "VERIFY_RECORD_PRESENT",
+      "phase": "VERIFICATION",
+      "resource_id": "audit_record_6325",
+      "state": "PRESENT",
+      "step_no": 11,
+      "system_id": "security_service"
+    },
+    {
+      "evidence_id": "",
+      "operation": "VERIFY_RECORD_REDACTED",
+      "phase": "VERIFICATION",
+      "resource_id": "support_835",
+      "state": "REDACTED",
+      "step_no": 12,
+      "system_id": "support_platform"
+    },
+    {
+      "evidence_id": "",
+      "operation": "VERIFY_RECORD_ANONYMIZED",
+      "phase": "VERIFICATION",
+      "resource_id": "analytics_1738",
+      "state": "ANONYMIZED",
+      "step_no": 13,
+      "system_id": "analytics_platform"
+    },
+    {
+      "evidence_id": "",
+      "operation": "VERIFY_DATA_FLOW_DISABLED",
+      "phase": "VERIFICATION",
+      "resource_id": "data_flow_5080",
+      "state": "DISABLED",
+      "step_no": 14,
+      "system_id": "integration_service"
+    }
+  ],
+  "uncertainty": [
+    "batch-inferred resource with an equally plausible rival request"
+  ]
+}

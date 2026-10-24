@@ -34,7 +34,7 @@ from ingest.requests import DeletionRequest, case_sort_key
 # records, and the window around reported_at in which it happens.
 PROFILE_SUBMISSION = ("submitted primary profile", "target resource")
 POLICY_COMPLETION = ("policy action completed", "reported the requested operation as completed")
-PROFILE_WINDOW = (timedelta(hours=2), timedelta(minutes=15))
+PROFILE_WINDOW = (timedelta(hours=2), timedelta(hours=1))
 POLICY_WINDOW = (timedelta(hours=1), timedelta(minutes=5))
 WORKER = "deletion_worker"
 
