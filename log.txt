@@ -9,3 +9,25 @@ Parent Agent: none
 Language: py
 Time Remaining: not configured
 
+
+## [2026-10-24T18:51:48Z] Phase 1 done: ingest, identity, batch linkage (recall 86.5%)
+
+User Prompt (verbatim, secrets redacted):
+You are building my submission for HackerRank Orchestrate (October 2026): "Ghost Data Still Exists", an AI-powered deletion-audit agent. Work autonomously through every phase below, end to end, without waiting for my approval between phases. [... full multi-phase build specification: setup rules, data facts T1-T14, architecture, phases 1-6, quality bar, and the Groq free-tier override; verbatim copy kept in the session transcript, omitted here only for length ...]
+
+Agent Response Summary:
+Seeded PRCSM/hackerrank-orchestrate (empty) from the upstream starter, read AGENTS.md/CLAUDE.md/problem_statement.md/README.md, and built the Phase 1 ingest layer for every evidence format (SQL, JSON, six log styles, handover text, OCR'd PNG, PDF) plus activities, identity resolution with history and sha256 email hashes, and a linkage module. User constraint honoured: exact-match identifiers only (T4) and a hard audit_at cutoff (T1). Failure found: 31.5% of sample resources (404 accounts, anonymised analytics) have no identifier anywhere; fix: deletion_worker batch inference around reported_at, tightened from a wide 5h window (recall 85.6%, 26 false links) to phrase-specific windows + evidence-file proximity + order alignment (recall 86.5%, 8 false links). Also found the legal-hold PDF attaching tombstone_17 to six users via a bare user_id alias and scoped aliases to the resource's own system. Deviation: code/io renamed code/storage because it would shadow the stdlib io module.
+
+Actions:
+* git clone upstream; copied into repo; created .gitignore; apt install tesseract-ocr sqlite3; pip install openai pytest pytesseract
+* Created code/config.py, code/ingest/*.py, code/graph/{identity,evidence_graph,linkage}.py, code/tests/*
+* Ran coverage report (94 files, 4061 units, 3102 observations) and sample recall script; pytest 8 passed
+* Wrote code/docs/handoff_phase1.md
+
+Context:
+tool=Claude Code
+model=claude-opus-5-5
+branch=claude/quirky-shannon-4nhscq
+repo_root=/home/user/hackerrank-orchestrate
+worktree=main
+parent_agent=none
