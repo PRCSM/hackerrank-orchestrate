@@ -123,7 +123,7 @@ def run_custom(diff: bool) -> str:
     from ingest.requests import load_requests
     from orchestrator import Orchestrator
 
-    dataset = CUSTOM_DIR / "dataset"
+    dataset = CUSTOM_DIR / "data"
     requests = load_requests(dataset / "deletion_requests.csv")
     with tempfile.TemporaryDirectory() as scratch:
         orchestrator = Orchestrator(Auditor(dataset), client=None, resume=False, trace_dir=Path(scratch), cache_dir=Path(scratch))

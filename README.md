@@ -1,4 +1,31 @@
-# HackerRank Orchestrate - October 2026
+# HackerRank Orchestrate (October 2026) — Ghost Data Still Exists: submission
+
+Deletion-audit agent: for each of the 518 requests it decides whether deletion was requested,
+reconstructs the subject's identifiers, establishes the state of every copy at `audit_at` from evidence, and
+emits COMPLETE / INCOMPLETE / NOT_APPLICABLE with ordered findings, remediation and verification steps.
+
+## Quick start
+
+```bash
+pip install openai pydantic pytest
+sudo apt-get install -y tesseract-ocr poppler-utils   # macOS: brew install tesseract poppler
+cp .env.example .env                                  # optional: GROQ_API_KEY=... (never committed)
+python3 code/main.py            # -> ./output.csv (518 rows); add --no-llm for deterministic mode
+python3 code/main.py --sample && python3 code/evaluation/main.py --pred code/evaluation/sample_predictions.csv
+python3 -m pytest -q code/tests
+```
+
+Without `GROQ_API_KEY` the system runs fully deterministic and still produces a complete, validated
+`output.csv`. Architecture, commands and design decisions: [`code/README.md`](code/README.md).
+Results: [`code/evaluation/evaluation_report.md`](code/evaluation/evaluation_report.md) (samples: status 100%,
+step F1 95.2%), token/cost: [`code/evaluation/usage_report.md`](code/evaluation/usage_report.md).
+
+Submission page: https://www.hackerrank.com/contests/hackerrank-orchestrate-october26/challenges/ghost-data-still-exists
+
+---
+
+# Challenge description (from the starter repository)
+
 
 ## Ghost Data Still Exists
 

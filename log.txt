@@ -116,3 +116,366 @@ branch=claude/quirky-shannon-4nhscq
 repo_root=/home/user/hackerrank-orchestrate
 worktree=main
 parent_agent=none
+
+
+## [2026-10-24T19:20:12Z] Build Ghost Data deletion-audit agent end to end (phases 1-6)
+
+User Prompt (verbatim, secrets redacted):
+You are building my submission for HackerRank Orchestrate (October 2026): "Ghost Data Still Exists", an AI-powered deletion-audit agent. Work autonomously through every phase below, end to end, without waiting for my approval between phases. Stop and ask me only if something is truly blocking: a missing API key, a destructive action, or a contradiction in the rules.
+
+=====================================================================
+0. SETUP AND NON-NEGOTIABLE RULES
+=====================================================================
+1. Make sure you are in the repo root of
+   https://github.com/interviewstreet/hackerrank-orchestrate-october26.
+   - If the repo isn't here, clone it with git or gh and cd into it.
+   - Run `git pull` to pick up any organizer updates.
+2. Read these files completely before writing any code:
+   - AGENTS.md
+   - CLAUDE.md
+   - problem_statement.md
+   - README.md
+   If anything in this prompt conflicts with those files, the repo files win. If you lose context later, re-read them. You can also fetch:
+   - https://github.com/interviewstreet/hackerrank-orchestrate-october26/blob/main/problem_statement.md
+   - https://github.com/interviewstreet/hackerrank-orchestrate-october26/blob/main/dataset/deletion_requests.csv
+3. LOGGING IS MANDATORY.
+   - Follow AGENTS.md §2–§5 exactly.
+   - Append a SESSION START entry to ./log.txt, then one entry after every turn.
+   - tool= must be the real harness name (Claude Code). model= must be the exact runtime model ID from your environment; never guess it.
+   - Re-read each entry after writing it.
+   - Sub-agents log to the same file with parent_agent set.
+   - Never log secrets.
+   - In each log entry, make my direction visible: the constraint I set, the decision you made, the test you ran, the failure you found, and the fix you applied. This transcript is graded.
+4. Use only participant-facing data under dataset/.
+   - No hardcoded case labels.
+   - No case_id-specific branches.
+   - No copying sample answers into logic.
+   - sample_output.csv may be used ONLY for evaluation and to learn general rules.
+5. Secrets come from environment variables only: ANTHROPIC_API_KEY, plus optional OPENAI_API_KEY.
+   - Create .env.example. Add .env to .gitignore.
+   - If no key is set, the system must still run fully in deterministic mode (`--no-llm`). Report that clearly in usage_report.md.
+6. Commit to git after each phase with a clear message.
+7. Use the gh CLI or GitHub tools if needed. Use web fetch for the links above. Install Python packages with pip, plus tesseract/poppler if missing.
+
+=====================================================================
+1. PROBLEM SUMMARY (verify against problem_statement.md)
+=====================================================================
+Input:
+- dataset/deletion_requests.csv: 518 cases with columns
+  case_id, email, requested_at, reported_status, reported_at, audit_at, request_text
+
+Output:
+- ./output.csv (repo root) with the exact header `case_id,deletion_status,steps_json`.
+- 518 rows, sorted by case_id.
+- deletion_status is one of COMPLETE | INCOMPLETE | NOT_APPLICABLE.
+- steps_json is a JSON array of objects with exactly these keys:
+  step_no, phase, system_id, resource_id, operation, state, evidence_id
+- step_no starts at 1 and is consecutive.
+
+Phases and operations, in table order:
+- FINDING:
+  REPORT_REMAINING_RECORD/PRESENT, REPORT_EXPOSED_PII/PRESENT,
+  REPORT_ACTIVE_DATA_FLOW/ACTIVE, REPORT_RESTORE_RISK/ACTIVE
+- REMEDIATION:
+  DISABLE_DATA_FLOW/DISABLED, BLOCK_RESTORE/BLOCKED, DELETE_RECORD/ABSENT,
+  REDACT_RECORD/REDACTED, ANONYMIZE_RECORD/ANONYMIZED
+- VERIFICATION:
+  VERIFY_RECORD_ABSENT/ABSENT, VERIFY_RECORD_PRESENT/PRESENT,
+  VERIFY_RECORD_REDACTED/REDACTED, VERIFY_RECORD_ANONYMIZED/ANONYMIZED,
+  VERIFY_DATA_FLOW_DISABLED/DISABLED, VERIFY_RESTORE_BLOCKED/BLOCKED
+
+Ordering:
+- Sort by phase first, then by operation order within the phase (the table order above), then system_id ascending, then resource_id ascending.
+
+Status rules:
+- COMPLETE: verification steps only, each citing a file_id, activity_id, or audit_id that proves the state at audit_at.
+- INCOMPLETE: findings (with evidence), then remediation (evidence_id ""), then verification (evidence_id "").
+- NOT_APPLICABLE: `[]`. Use this when request_text does not authorize deletion (access, export, correction, marketing opt-out, login help, invoices, email change, and so on). Requests are multilingual (EN/ES/PT/FR/JA/KO).
+
+Policy:
+- dataset/deletion_rules.csv:
+  - DELETE: profile, secondary identifier, search, cache, support attachment, export, marketing.
+  - REDACT: support message with shared context, email delivery log, account tombstone.
+  - ANONYMIZE: analytics, telemetry.
+  - RETAIN: security audit log in retention, legal hold.
+  - BACKUP_ARCHIVE is RETAINED but must have restore blocked.
+- Tombstones keep the stable user_id and must have name, email, phone, and email_hash removed.
+
+Evidence:
+- dataset/evidence_files.csv maps file_id to path and captured_at.
+- Formats: SQLite-compatible .sql, JSON, three log styles, handover .txt, PNG screenshots, PDFs.
+- Other context: user_identities.csv (current identities), user_audit_log.csv (historical identity changes), system_activity.csv (global activity; reported_result is only a CLAIM).
+
+=====================================================================
+2. DATA FACTS ALREADY DISCOVERED (verify, don't trust blindly)
+=====================================================================
+These came from my earlier analysis. Write a test for each one.
+
+T1. Time cutoff
+- Never use or cite evidence whose file captured_at > the case's audit_at. Activities and audit rows after audit_at are excluded too.
+- Example: a snapshot bundle captured 09-17 shows an account ACTIVE, but the case audits 09-15, so it must be ignored.
+- State at audit_at = the latest pre-cutoff observation per resource.
+
+T2. Historical identifiers
+- Resolve the request email, case-insensitively, against current AND historical values: user_identities plus user_audit_log old_value/new_value for email and phone.
+- Then collect every key for that user_id: all emails, phones, the email_hash of each email, and the user_id itself.
+
+T3. email_hash
+- email_hash = sha256(lowercase(email)) hex. This is verified.
+- Hashes and correlation keys in logs can link records that show no email at all.
+
+T4. Lookalike decoys
+- Exist in the data: nadia.ionescu vs nadia.popescu, smartinez6461 vs smartinez6461.jr, g.silva76 vs g.silva76.jr.
+- Match identifiers by EXACT normalized equality only. Never use fuzzy or substring matching.
+
+T5. Case noise
+- Some evidence has UPPERCASE emails. Normalize with strip + lower.
+
+T6. Claims vs. proof
+- system_activity reported_result (SUCCESS/FAILED/PARTIAL) and workflow statuses are claims. State comes from readback evidence: 404/NOT_FOUND/rows=0 means absent; 200/FOUND/hit means present; null identifier fields or [REDACTED] mean redacted/anonymized; enabled=false/stopped/DISABLED; restore_allowed=false/BLOCKED.
+- Example: case_25 shows a delete FAILED in the activity log, but readback is 404, so the record is ABSENT and the case is COMPLETE.
+
+T7. Records with no identifiers
+- These link to a user via user_id, customer_reference, subject_reference, or subject_selector in evidence.
+- They also link via LINK_RESOURCE_IDENTITY activities ("Data catalog linked X to <email> and user_N"), via snapshots that show the record identified earlier, and via deletion_worker activity batches.
+- Investigate how sample anonymized analytics records (e.g. analytics_1895 → user_25 in case_25) are linked, and generalize the rule you find.
+
+T8. Verification pattern in samples
+- Deletion cases always include VERIFY_RECORD_ABSENT for the user's account_service resource.
+- They include VERIFY_RECORD_PRESENT for retained security_service audit records.
+- INCOMPLETE cases also re-verify already-compliant resources, with empty evidence_id.
+- Confirm this across all 32 samples and derive the general rule; do not hardcode it.
+
+T9. Record shapes
+- Remaining-but-identifiable analytics or support records are REPORT_EXPOSED_PII → ANONYMIZE/REDACT.
+- Whole records that must go are REPORT_REMAINING_RECORD → DELETE.
+- Active connectors are REPORT_ACTIVE_DATA_FLOW → DISABLE_DATA_FLOW.
+- restore_allowed=true backups are REPORT_RESTORE_RISK → BLOCK_RESTORE.
+
+T10. Open question
+- In sample case_12, an analytics record (analytics_9914, matched only via a hashed correlation key of an OLD email, with email_opt_in) gets REPORT_REMAINING_RECORD → DELETE, not ANONYMIZE.
+- Figure out the general reason (secondary identifier? contact/marketing record? something else) from the evidence, and encode it as a rule, not a special case.
+
+T11. Evidence citation
+- Findings, and COMPLETE-case verifications, cite the evidence that proves the state at audit_at. Samples cite file_ids (evidence_XX).
+- When several files qualify, learn the tie-break from the samples: probably the latest pre-cutoff file that shows the resource. Measure it.
+
+T12. Test-set structure
+- Most test cases cluster on audit dates ~5 days apart, matching periodic evidence series (evidence_62..94: service_resource_export JSON, customer_data_inventory SQL, resource_lookup_trace log).
+- Early cases (case_33..~50) use the hand-crafted evidence (evidence_01..61).
+
+T13. SQL replicas
+- SQL files contain primary vs. read/regional/reporting/failover replicas. Compare tables to detect replication drift, where the replica still holds deleted data.
+
+T14. NOT_APPLICABLE volume
+- About 10 test cases have non-deletion texts. activity CLASSIFY_REQUEST "non-deletion" rows corroborate this, but the decision comes from request_text.
+
+=====================================================================
+3. ARCHITECTURE (build exactly this; I chose it deliberately)
+=====================================================================
+"Tool-using investigator agent over a deterministic evidence graph." The LLM handles language, ambiguity, and linkage judgment. Code handles time cutoff, policy, ordering, and serialization.
+
+code/
+  main.py                    CLI: python3 code/main.py [--no-llm] [--cases case_33,...] [--sample] [--no-resume]
+  config.py                  paths, model names, limits (env-overridable)
+  ingest/
+    manifest.py              load evidence_files.csv → captured_at per file_id
+    parse_sql.py             execute each .sql into in-memory sqlite, emit observations per row/table
+    parse_json.py            snapshot bundles, service_resource_export, connector configs, export jobs, analytics report, security ledger, manifests
+    parse_logs.py            handle key=value, pipe-delimited, and requestId/message="..." styles; keep line timestamps
+    parse_text.py            handover .txt table lines
+    parse_media.py           pytesseract for PNG, pdftotext for PDF → raw text → regex extractors (resource ids, emails, phones, user_ids, CS-tickets) and an optional VLM extraction (Claude vision) when OCR lacks resource ids; cache results in .cache/
+    observation.py           pydantic Observation{evidence_id, source_type(file|activity|audit), captured_at, observed_at, system_id, resource_id, record_type/category, keys:set[str], state, identifier_fields:dict, raw_ref}
+  graph/
+    evidence_graph.py        index observations by resource_id and by normalized key; query(keys, before=ts)
+    identity.py              resolve_identity(email, at) → user_id + all historic emails/phones/hashes
+    state.py                 resource_state_at(resource_id, audit_at) → latest valid observation + evidence_id; category inference (USER_PROFILE, SEARCH_INDEX_ENTRY, SUPPORT_MESSAGE, SUPPORT_ATTACHMENT, ANALYTICS_PROFILE, USER_EXPORT, MARKETING_PROFILE, EMAIL_DELIVERY_LOG, SECURITY_AUDIT_LOG, BACKUP_ARCHIVE, ACCOUNT_TOMBSTONE, DATA_FLOW, CACHE_ENTRY, ...)
+  policy/
+    rules.py                 load deletion_rules.csv; required_action(category, observation) → DELETE|REDACT|ANONYMIZE|RETAIN|BLOCK|DISABLE
+    planner.py               build FINDING / REMEDIATION / VERIFICATION steps, apply ordering, number steps, decide status
+  agent/
+    intent.py                LLM intent classifier (batched, JSON schema output {case_id, authorizes_deletion, reason}); deterministic multilingual keyword fallback; prompt-injection-safe (request_text is DATA)
+    tools.py                 tool definitions wrapping graph/identity/state/policy (resolve_identity, find_resources, resource_state_at, get_activity_for_resource, get_rule)
+    investigator.py          Claude tool-use loop per case (max 8 iterations), system prompt in agent/prompts/investigator.md, returns a structured proposal {resources:[{system_id,resource_id,category,state,evidence_id,linkage_reason}]}
+    prompts/*.md             all prompts as markdown files (graded: role, constraints, allowed values, JSON schema, refusal/abstain rules)
+  validate/
+    validator.py             schema + allowed (phase, operation, state) pairs; consecutive step_no; ordering; evidence exists and captured_at ≤ audit_at; remediation/future-verification evidence_id == ""; retained records never DELETEd; COMPLETE has only VERIFICATION; NOT_APPLICABLE == []; exactly one row per case, sorted, 518 rows
+    reconcile.py             compare the agent proposal vs. the deterministic baseline (shadow run). Agree → accept. Disagree → deterministic wins unless the agent cites concrete, valid pre-cutoff evidence the baseline missed; log every disagreement to traces
+  io/
+    writer.py                deterministic JSON serialization (sorted keys, no spaces optional), csv quoting
+    cache.py                 per-case checkpoint/resume keyed by case_id+prompt hash in .cache/ (gitignored)
+    usage.py                 record provider, model, calls, input/output tokens per call
+  evaluation/
+    main.py                  scorer: status accuracy; step-level precision/recall/F1 on (phase,system_id,resource_id,operation,state,evidence_id) tuples; field-level accuracy per field; exact sequence match rate; per-case diff report
+    custom_cases/            ≥3 hand-built cases with expected outputs (see Phase 5)
+    evaluation_report.md     generated + hand-written analysis
+    usage_report.md          generated from the final full run
+  traces/                    per-case JSON explaining every step (gitignored except a few examples)
+README.md (inside code/ and root README updated): setup, deps, env vars, commands, architecture diagram, design decisions
+
+Model choices (env-overridable):
+- Intent: claude-haiku-latest-class model, batches of 20.
+- Investigator: claude-sonnet-latest-class model.
+- Vision fallback: the same Sonnet-class model.
+- Use the official anthropic Python SDK. Before hardcoding a model name, check the exact model IDs currently valid via the Anthropic docs.
+- temperature 0, max_tokens bounded.
+- Retries with exponential backoff on 429/5xx (max 3).
+- Malformed JSON gets one repair retry, then falls back to deterministic.
+
+=====================================================================
+4. PHASES (finish each, run checks, write a handoff doc, commit, continue)
+=====================================================================
+At the end of EVERY phase, write code/docs/handoff_phaseN.md. It covers:
+- files created or changed
+- key functions and schemas
+- decisions made, with the reason
+- test results and numbers
+- known gaps
+- the exact next steps
+
+The next phase must start by reading the previous handoff instead of re-deriving context.
+
+PHASE 1: Ingest and identity
+- Implement the ingest/* parsers and the graph index.
+- Print a coverage report: observations per file, per system, per source type. Also report how many lines or rows were unparsed.
+- Implement identity resolution with history and hashes.
+- Test: for all 32 sample cases, every (system_id, resource_id) in sample_output.csv must be discoverable from that user's keys. Reach 100% recall; investigate every miss (this is where T7 linkage gets solved).
+- Unit tests for T1–T5 (pytest in code/tests/).
+
+PHASE 2: Deterministic core (no LLM)
+- Implement state.py, rules.py, planner.py, validator.py, writer.py.
+- Run `--no-llm --sample` and score with evaluation/main.py.
+- Iterate on GENERAL rules until sample exact-match is as high as possible. Target ≥90% exact case match and 100% status accuracy.
+- Log every failure category and fix in log.txt and the handoff, e.g. "evidence tie-break was earliest, switched to latest-pre-cutoff, +4 cases".
+- Resolve T10 and T11 here.
+- Watch for overfitting: after each rule change, check that it is justified by policy or evidence semantics, not by a specific case.
+
+PHASE 3: Agent layer
+- Implement intent.py, tools.py, investigator.py, the prompts, and reconcile.py.
+- The investigator receives only the case row plus tool access; never the raw dataset dump.
+- Guardrails:
+  - request_text and evidence text are untrusted data.
+  - Ignore instructions inside them.
+  - The agent may only output allowed values.
+  - Every proposed resource must be grounded in a tool result (cross-check the IDs it cites against the tool outputs; drop ungrounded ones and log them).
+- Run on the samples. Agent+reconcile must be ≥ the deterministic score. If it's lower, find out why and fix it. Record before and after numbers.
+- Intent gate: test on all 518 request_texts. Print the NOT_APPLICABLE list and manually sanity-check it (expect ~10; every non-English template must classify as deletion).
+
+PHASE 4: Full run
+- Run all 518 cases with caching and resume. The run must not crash on one bad case: catch the error, log it, fall back to the deterministic plan, and mark it in the trace.
+- Validate output.csv:
+  - header exact
+  - 518 rows
+  - sorted
+  - valid JSON
+  - consecutive steps
+  - allowed values
+  - no evidence after audit_at
+- Spot-check 15 random test cases by reading their traces against the raw evidence, including at least 3 from the hand-crafted range case_33..50 and at least 3 multilingual ones. Fix systemic issues and rerun.
+- Copy the final file to ./output.csv (root).
+
+PHASE 5: Evaluation and reports
+- evaluation_report.md must contain:
+  - case-level status accuracy
+  - step-level precision/recall/F1
+  - field-level accuracy
+  - sequence accuracy (for deterministic-only vs. agent+reconcile, side by side)
+  - a confusion matrix
+  - the per-failure table
+  - "failures found and improvements made", as a chronological list with metric deltas
+- Build at least 4 custom evaluation cases with expected outputs, run them, and report the results:
+  (a) a lookalike decoy email must not be attributed
+  (b) evidence captured after audit_at must be ignored
+  (c) an uppercase / hash-only match must be found
+  (d) a non-deletion request in a non-English language → NOT_APPLICABLE
+  Plus optionally: a restore-risk backup, and a tombstone with exposed PII.
+- usage_report.md: from the final full run's real logged numbers. Include:
+  - providers and models
+  - number of calls per model
+  - input/output tokens per model and total
+  - average tokens per request
+  - estimated cost total and per request, using current published pricing (look it up, cite the date)
+  - cache-hit notes
+
+PHASE 6: Packaging and interview prep
+- READMEs: root README.md and code/README.md, with exact setup and run commands.
+- Create code.zip with:
+  zip -r code.zip README.md code -x "*/__pycache__/*" "*/.venv/*" "*/venv/*" "*/node_modules/*" "*/.git/*" "*/.DS_Store" "*/.cache/*"
+- Verify the zip:
+  - no dataset/
+  - no nested archives
+  - no secrets
+  - includes code/evaluation/evaluation_report.md and usage_report.md
+- Verify log.txt formatting against AGENTS.md.
+- Write code/docs/interview_prep.md:
+  - a 60-second pitch
+  - an architecture walkthrough tracing one case input to output
+  - why agent + deterministic gate and not pure rules or pure LLM, with numbers
+  - the 5 hardest traps and how the code handles each (cite file and function names)
+  - 3 real failures found and fixed, with metric deltas
+  - limitations and what I'd do next
+  - production monitoring ideas
+  - 20 likely judge questions with concise, specific answers
+- Final summary to me:
+  - sample scores
+  - run stats
+  - file locations
+  - submission link: https://www.hackerrank.com/contests/hackerrank-orchestrate-october26/challenges/ghost-data-still-exists
+
+=====================================================================
+5. QUALITY BAR
+=====================================================================
+- Type hints and small functions. Clear names (no utils.py, final.py, test2.py).
+- No dead code: the judge reads the repo and penalizes features the code doesn't actually use.
+- Deterministic output: re-running with the cache gives byte-identical output.csv.
+- Never write an unsupported label to output. The validator is the last gate.
+- If a rule is uncertain, prefer the reading best supported by problem_statement.md and the samples, and document the choice in the handoff.
+- After Phase 6, stop and tell me what to review. I'll do follow-up review rounds myself.
+
+=====================================================================
+OVERRIDE: LLM PROVIDER = GROQ (FREE TIER)
+=====================================================================
+- Provider: Groq, via its OpenAI-compatible API.
+  - Use the `openai` Python SDK with base_url="https://api.groq.com/openai/v1" and api_key=os.environ["GROQ_API_KEY"].
+  - Do NOT use the Anthropic SDK. Replace ANTHROPIC_API_KEY with GROQ_API_KEY everywhere (.env.example, README, config.py).
+- Before hardcoding model IDs, verify the current ones with https://console.groq.com/docs/models and GET /openai/v1/models.
+  - Expected: openai/gpt-oss-120b, openai/gpt-oss-20b, qwen/qwen3.8-27b.
+  - Put the IDs in config.py, overridable by env.
+- Model routing:
+  - Intent classifier: openai/gpt-oss-20b. Batch 25 request_texts per call, JSON output, temperature 0.
+  - Investigator agent (tool-calling loop, max 6 iterations): openai/gpt-oss-120b.
+  - Fallback when a model returns a daily-quota 429: qwen/qwen3.8-27b, then the deterministic plan.
+- Free-tier budget (assume ~30 RPM, 8K TPM, 200K TPD per model; read the real values from the x-ratelimit-* response headers):
+  - A token-bucket rate limiter in agent/llm_client.py. It respects retry-after on 429 and waits for the minute window. It never hammers the API.
+  - Run the investigator ONLY on "uncertain" cases flagged by the deterministic baseline:
+    - multiple candidate users or lookalike keys
+    - a resource linked only via hash or batch inference
+    - conflicting observations at the same timestamp
+    - no evidence found for the account resource
+    - validator warnings
+  - Log how many cases were routed, and why, in the trace and in usage_report.md.
+  - Keep agent prompts compact. Tool results return only the needed fields (truncate raw evidence to ≤1,500 chars).
+- Caching and resume are mandatory: a rerun must spend 0 tokens for cached cases. If quota runs out mid-run, the deterministic plan fills the rest; record which cases those were. Rerun next day to complete them.
+- Vision: Groq has no vision model in scope. Use pytesseract + pdftotext only for images and PDFs; drop the VLM fallback.
+- usage_report.md:
+  - real per-model calls and input/output tokens from the response `usage` fields
+  - average tokens per request
+  - actual cost = $0 (free tier)
+  - a projected cost at Groq paid pricing (look it up and cite the date)
+- --no-llm mode must still produce a complete, valid output.csv.
+
+Agent Response Summary:
+Built the full submission as specified: multi-format ingest into one observation model with a hard audit_at cutoff, exact historical identity resolution, key/recreation/deletion-batch linkage, state reconstruction from readbacks only, policy planner, validator, writer, Groq agent layer (batched gpt-oss-20b intent, gpt-oss-120b tool investigator, qwen fallback, token bucket, cache) gated by a reconciler, evaluation and usage reports, custom cases, READMEs, code.zip and interview prep. User constraints honoured: no case-specific logic, samples used only for scoring/general rules, repo files win (code/io renamed code/storage to avoid shadowing stdlib io). Final deterministic results on the 32 samples: status 100%, step P/R/F1 97.3/93.3/95.2%, 20/32 exact (below the user's 90% exact target: 8 gold steps are unreachable before audit_at and 5 are genuine batch ties); output.csv 518 rows, 0 validator problems, byte-identical reruns. Blocker reported, not worked around: no GROQ_API_KEY and Groq hosts blocked by the network policy, so the LLM layer was verified with a scripted transport and usage is 0 tokens with a cited paid-tier projection.
+
+Actions:
+* Phases 1-5 detailed in the entries above and in code/docs/handoff_phase1..5.md
+* Phase 6: wrote README.md, code/README.md, code/docs/interview_prep.md, code/docs/handoff_phase6.md; built and verified code.zip (93 files, 0 forbidden entries, secret scan clean); verified every log.txt entry has one tool=/model= line
+* Final checks: python3 code/main.py (518 rows, md5 105d9ecd969bb05dcf58c4470dda09ff), pytest code/tests (23 passed), pyflakes clean; git commit and push to claude/quirky-shannon-4nhscq
+
+Context:
+tool=Claude Code
+model=claude-opus-5-5
+branch=claude/quirky-shannon-4nhscq
+repo_root=/home/user/hackerrank-orchestrate
+worktree=main
+parent_agent=none

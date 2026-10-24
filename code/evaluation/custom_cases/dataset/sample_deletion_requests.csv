@@ -1,7 +1,0 @@
-case_id,email,requested_at,reported_status,reported_at,audit_at,request_text
-case_c1,maria.lopez@example.com,2026-05-08T09:00:00Z,COMPLETE,2026-05-09T12:00:00Z,2026-05-12T12:00:00Z,Please delete my account. I used an older address before; remove anything under either address.
-case_c2,ken.ito@example.com,2026-05-08T09:00:00Z,NOT_STARTED,2026-05-09T12:00:00Z,2026-05-12T12:00:00Z,アカウント情報のコピーを送ってください。アカウントは引き続き使うので、削除はしないでください。
-case_c3,anna.berg@example.com,2026-05-08T09:00:00Z,COMPLETE,2026-05-09T12:00:00Z,2026-05-12T12:00:00Z,Please erase my account and anything that can still identify me.
-case_c4,tom.reed@example.com,2026-05-08T09:00:00Z,COMPLETE,2026-05-09T12:00:00Z,2026-05-12T12:00:00Z,I want my account permanently deleted.
-case_c5,lena.vogt@example.com,2026-05-08T09:00:00Z,PARTIALLY_COMPLETE,2026-05-09T12:00:00Z,2026-05-12T12:00:00Z,Bitte löschen Sie mein Konto. Backups may stay but must not restore my data.
-case_c6,sofia.ruiz@example.com,2026-05-08T09:00:00Z,NOT_STARTED,2026-05-09T12:00:00Z,2026-05-12T12:00:00Z,Quiero darme de baja de los correos promocionales. Sigo usando mi cuenta.
