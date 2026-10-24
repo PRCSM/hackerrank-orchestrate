@@ -25,6 +25,7 @@ NON_DELETION_PATTERNS = (
     r"\binvoice", r"\bmisspelled\b", r"\bout of date\b", r"\bchange the email\b", r"\breset(ting)? the login\b",
     r"\bcan'?t access my profile\b",
 )
+NO_MATCH = "no deletion instruction found"
 
 
 def classify(text: str) -> tuple[bool, str]:
@@ -36,4 +37,4 @@ def classify(text: str) -> tuple[bool, str]:
         return False, f"non-deletion request (matched {negative!r})"
     if positive:
         return True, f"deletion requested (matched {positive!r})"
-    return False, "no deletion instruction found"
+    return False, NO_MATCH

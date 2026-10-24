@@ -11,6 +11,20 @@ from pathlib import Path
 
 CODE_DIR = Path(__file__).resolve().parent
 REPO_ROOT = CODE_DIR.parent
+
+
+def _load_dotenv(path: Path) -> None:
+    """Read KEY=VALUE lines from an uncommitted .env without overriding the shell."""
+    if not path.exists():
+        return
+    for line in path.read_text(encoding="utf-8").splitlines():
+        name, sep, value = line.strip().partition("=")
+        if sep and name and not name.startswith("#"):
+            os.environ.setdefault(name.strip(), value.strip().strip('"').strip("'"))
+
+
+_load_dotenv(REPO_ROOT / ".env")
+
 DATASET_DIR = Path(os.environ.get("GDSE_DATASET_DIR", REPO_ROOT / "dataset"))
 OUTPUT_PATH = Path(os.environ.get("GDSE_OUTPUT_PATH", REPO_ROOT / "output.csv"))
 CACHE_DIR = Path(os.environ.get("GDSE_CACHE_DIR", CODE_DIR / ".cache"))
@@ -29,6 +43,8 @@ INVESTIGATOR_MAX_ITERATIONS = int(os.environ.get("GDSE_INVESTIGATOR_MAX_ITERATIO
 MAX_OUTPUT_TOKENS = int(os.environ.get("GDSE_MAX_OUTPUT_TOKENS", "1200"))
 TOOL_RESULT_CHAR_LIMIT = int(os.environ.get("GDSE_TOOL_RESULT_CHAR_LIMIT", "1500"))
 MAX_RETRIES = int(os.environ.get("GDSE_MAX_RETRIES", "3"))
+# Investigations per run (free tier: ~200K tokens/day/model, ~10-15K per case).
+MAX_INVESTIGATIONS = int(os.environ.get("GDSE_MAX_INVESTIGATIONS", "12"))
 
 # Free-tier defaults; the client tightens them from x-ratelimit-* headers.
 REQUESTS_PER_MINUTE = int(os.environ.get("GDSE_RPM", "30"))
@@ -41,6 +57,7 @@ PRICE_PER_MTOK = {
     "openai/gpt-oss-20b": (0.075, 0.30),
     "qwen/qwen3.8-27b": (0.80, 4.00),
 }
+
 
 
 def groq_api_key() -> str | None:

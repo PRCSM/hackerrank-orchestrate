@@ -122,7 +122,26 @@ class Linker:
                 if self._claimable(request, links[request.case_id], activity.resource_id):
                     claims[activity.resource_id].append((request.case_id, activity))
         self._assign(claims, links, by_case)
+        self.claims, self.links, self.by_case = claims, links, by_case
         return links
+
+    def batch_candidates(self, case_id: str) -> list[dict]:
+        """Batch rows this case claims, with rivals and who got each (agent tool)."""
+        case = self.links[case_id]
+        files = self._evidence_files(case, self.by_case[case_id].audit_at)
+        owner = {r: c for c, l in self.links.items() for r, link in l.links.items() if link.channel == "batch"}
+        rows = []
+        for resource_id, claimants in sorted(self.claims.items()):
+            mine = [a for c, a in claimants if c == case_id]
+            if not mine:
+                continue
+            seen = {o.evidence_id for o in self.graph.resource_observations(resource_id, self.by_case[case_id].audit_at)}
+            rows.append({
+                "resource_id": resource_id, "activity_id": mine[0].activity_id, "event_time": mine[0].event_time,
+                "competing_requests": sorted((c for c, _ in claimants if c != case_id), key=case_sort_key),
+                "observed_in_subject_evidence": sorted(seen & files), "assigned_to": owner.get(resource_id, ""),
+            })
+        return rows
 
     def _batch(self, request: DeletionRequest, worker: list[Activity]) -> list[Activity]:
         """Worker rows in the request's batch: the primary-profile submission

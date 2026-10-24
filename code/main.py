@@ -20,9 +20,10 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from audit import Auditor  # noqa: E402
-from config import CODE_DIR, DATASET_DIR, OUTPUT_PATH, TRACE_DIR, groq_api_key  # noqa: E402
+from config import CACHE_DIR, CODE_DIR, DATASET_DIR, OUTPUT_PATH, TRACE_DIR, groq_api_key  # noqa: E402
 from ingest.requests import load_requests  # noqa: E402
 from orchestrator import Orchestrator  # noqa: E402
+from storage.usage import UsageRecorder  # noqa: E402
 from storage.writer import write_output  # noqa: E402
 from validate.validator import validate_case, validate_output  # noqa: E402
 
@@ -51,7 +52,12 @@ def main() -> None:
     if not args.no_llm and not use_llm:
         print("GROQ_API_KEY not set: running in deterministic mode (--no-llm).")
     auditor = Auditor(DATASET_DIR)
-    orchestrator = Orchestrator(auditor, use_llm=use_llm, resume=not args.no_resume, trace_dir=TRACE_DIR)
+    client = None
+    if use_llm:
+        from agent.llm_client import GroqClient
+
+        client = GroqClient(UsageRecorder(CACHE_DIR / "usage.jsonl"))
+    orchestrator = Orchestrator(auditor, client=client, resume=not args.no_resume, trace_dir=TRACE_DIR)
     # Every request competes in deletion-batch attribution, whichever subset is printed.
     results = orchestrator.run(targets, all_requests=samples + evaluation)
     evidence_time = auditor.evidence_times()
